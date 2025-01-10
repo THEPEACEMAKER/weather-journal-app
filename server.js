@@ -18,7 +18,7 @@ const cors = require("cors");
 app.use(cors());
 
 // Initialize the main project folder
-app.use(express.static("website"));
+app.use(express.static("website")); // the root folder served when the server URL is accessed
 
 // GET route to send projectData
 app.get("/all", (req, res) => {

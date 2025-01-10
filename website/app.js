@@ -21,6 +21,23 @@ const getWeatherData = async (baseURL, zip, apiKey) => {
   }
 };
 
+// Async function to POST data to the server
+const postData = async (url = "", data = {}) => {
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data), // Convert data to JSON string
+    });
+    return await response.json(); // Parse the response as JSON
+  } catch (error) {
+    console.error("Error posting data:", error);
+  }
+};
+
 // Event listener for the Generate button
 document.getElementById("generate").addEventListener("click", async (event) => {
   event.preventDefault(); // Prevent form submission (page reload)
@@ -37,7 +54,16 @@ document.getElementById("generate").addEventListener("click", async (event) => {
   // Fetch weather data
   const weatherData = await getWeatherData(baseURL, zip, apiKey);
 
-  // Log the weather data and user feelings
-  console.log(weatherData);
-  console.log("User's feelings: ", feelings);
+  if (weatherData) {
+    // Create data object
+    const data = {
+      temperature: weatherData.main.temp,
+      date: newDate,
+      userResponse: feelings,
+    };
+
+    // POST data to the server
+    const postResponse = await postData("/add", data);
+    console.log("POST response:", postResponse); // Log the server response
+  }
 });
