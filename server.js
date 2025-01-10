@@ -1,5 +1,9 @@
 // Setup empty JS object to act as endpoint for all routes
-let projectData = { good: "great" };
+let projectData = {
+  temperature: null,
+  date: null,
+  userResponse: null,
+};
 
 // Require Express to run server and routes
 const express = require("express");
@@ -8,10 +12,12 @@ const express = require("express");
 const app = express();
 
 /* Middleware*/
-//Here we are configuring express to use body-parser as middle-ware.
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+// this used to be done with body-parser middleware, but it got integrated into the express framework itself
+// Parse incoming requests with JSON payloads
+app.use(express.json());
+// Parse incoming requests with URL-encoded payloads (typically from HTML form submissions)
+// This middleware converts data from the URL-encoded format (e.g., "key=value&key2=value2") into a JavaScript object
+app.use(express.urlencoded({ extended: false }));
 
 // Cors for cross origin allowance
 const cors = require("cors");
