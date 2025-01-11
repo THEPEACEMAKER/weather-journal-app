@@ -7,54 +7,53 @@ const apiKey = "967798b5906d6ceb95a892ac3f258d9f&units=imperial"; // units=imper
 let d = new Date();
 let newDate = d.getMonth() + "." + d.getDate() + "." + d.getFullYear();
 
-// Async function to fetch weather data
-const getWeatherData = async (baseURL, zip, apiKey) => {
+// Function to fetch weather data
+const fetchWeatherData = (baseURL, zip, apiKey) => {
   const url = `${baseURL}?zip=${zip}&appid=${apiKey}`;
-  try {
-    const response = await fetch(url); // Await the fetch request to get weather data
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    const data = await response.json(); // await the incoming data, then convert them to JSON
-    return data;
-  } catch (error) {
-    console.error("Error fetching weather data:", error);
-  }
-};
-
-// Async function to POST data to the server
-const postData = async (url = "", data = {}) => {
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data), // Convert data to JSON string and send in the body
+  return fetch(url) // Return the fetch promise
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json(); // Return the JSON response
+    })
+    .catch((error) => {
+      console.error("Error fetching weather data:", error);
     });
-    return await response.json(); // await the incoming response, then Parse it as JSON
-  } catch (error) {
-    console.error("Error posting data:", error);
-  }
 };
 
-// Async function to get data from the server
-const getData = async (url = "") => {
-  try {
-    const response = await fetch(url); // Await the fetch request to get data from the server
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching data:", error);
-  }
+// Function to POST data to the server
+const postDataToServer = (url = "", data = {}) => {
+  return fetch(url, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data), // Convert data to JSON string and send in the body
+  })
+    .then((response) => response.json()) // Return the JSON response
+    .catch((error) => {
+      console.error("Error posting data:", error);
+    });
+};
+
+// Function to get data from the server
+const fetchDataFromServer = (url = "") => {
+  return fetch(url) // Return the fetch promise
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json(); // Return the JSON response
+    })
+    .catch((error) => {
+      console.error("Error fetching data:", error);
+    });
 };
 
 // Function to update the UI with the fetched data
-const updateUI = (data) => {
+const updateUIWithData = (data) => {
   document.getElementById("date").innerHTML = `Date: ${data.date}`;
   document.getElementById(
     "temp"
@@ -65,7 +64,7 @@ const updateUI = (data) => {
 };
 
 // Event listener for the Generate button
-document.getElementById("generate").addEventListener("click", async (event) => {
+const onGenerateButtonClick = (event) => {
   event.preventDefault(); // Prevent form submission (page reload)
 
   // Get user input
@@ -77,23 +76,34 @@ document.getElementById("generate").addEventListener("click", async (event) => {
     return;
   }
 
-  // // Fetch weather data and wait for it to finish before continuing
-  const weatherData = await getWeatherData(baseURL, zip, apiKey);
+  // Fetch weather data, post data to the server, and update the UI
+  fetchWeatherData(baseURL, zip, apiKey)
+    .then((weatherData) => {
+      if (weatherData) {
+        // Create the data object to send to the server
+        const data = {
+          temperature: weatherData.main.temp,
+          date: newDate,
+          userResponse: feelings,
+        };
 
-  if (weatherData) {
-    // Create the data object to send to the server
-    const data = {
-      temperature: weatherData.main.temp,
-      date: newDate,
-      userResponse: feelings,
-    };
+        // Post data to the server
+        return postDataToServer("/add", data); // Return the promise for chaining
+      }
+    })
+    .then((postResponse) => {
+      console.log("POST response:", postResponse); // Log the server response
+      // Fetch updated data from the server and update the UI
+      return fetchDataFromServer("/all"); // Return the promise for chaining
+    })
+    .then((updatedData) => {
+      updateUIWithData(updatedData); // Update the UI with the fetched data
+    })
+    .catch((error) => {
+      console.error("Error in the process:", error);
+    });
+};
 
-    // Post data to the server and wait for the response
-    const postResponse = await postData("/add", data);
-    console.log("POST response:", postResponse); // Log the server response
-
-    // Fetch updated data from the server and update the UI
-    const updatedData = await getData("/all");
-    updateUI(updatedData); // Update the UI with the fetched data
-  }
-});
+document
+  .getElementById("generate")
+  .addEventListener("click", onGenerateButtonClick);
